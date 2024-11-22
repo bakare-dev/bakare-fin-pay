@@ -1,0 +1,32 @@
+{
+  "name": "bakare-fin-pay",
+  "version": "1.0.0",
+  "description": "Fintech Api",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "nodemon main.js"
+  },
+  "author": "Bakare Praise",
+  "license": "ISC",
+  "dependencies": {
+    "@logtail/node": "^0.5.2",
+    "@logtail/winston": "^0.5.2",
+    "cloudinary": "^2.5.1",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.13",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.1",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.4",
+    "nodemailer": "^6.9.16",
+    "redis": "^4.7.0",
+    "sequelize": "^6.37.5",
+    "socket.io": "^4.8.1",
+    "validate.js": "^0.13.1",
+    "winston": "^3.17.0",
+    "winston-logstash": "^1.2.1"
+  }
+}
