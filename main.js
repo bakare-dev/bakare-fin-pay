@@ -14,16 +14,16 @@ main = () => {
 		let validateJSInit = new ValidateJSInit();
 		validateJSInit.setup();
 
-		// let server = new Server(config.server.port);
-		// server.start();
+		let server = new Server(config.server.port);
+		server.start();
 
-		let db = new DatabaseEngine();
+		// let db = new DatabaseEngine();
 
-		db.connect(async () => {
-			let server = new Server(config.server.port);
-			await startup.startMigration();
-			server.start();
-		});
+		// db.connect(async () => {
+		// 	let server = new Server(config.server.port);
+		// 	await startup.startMigration();
+		// 	server.start();
+		// });
 	} catch (e) {
 		logger.error(e);
 		process.exit(1);

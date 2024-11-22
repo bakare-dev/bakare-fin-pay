@@ -21,6 +21,7 @@ Beneficiary.init(
 		},
 		accountNumber: {
 			type: DataTypes.STRING,
+			unique: true,
 			allowNull: false,
 			validate: {
 				isNumeric: true,
@@ -48,17 +49,6 @@ User.hasMany(Beneficiary, {
 
 Beneficiary.belongsTo(User, {
 	foreignKey: "userId",
-});
-
-Currency.hasMany(Beneficiary, {
-	foreignKey: {
-		name: "currencyId",
-		allowNull: false,
-	},
-});
-
-Beneficiary.belongsTo(Currency, {
-	foreignKey: "currencyId",
 });
 
 module.exports = Beneficiary;

@@ -213,51 +213,6 @@ class AuthController {
 		}
 	};
 
-	createprofile = async (req, res) => {
-		try {
-			const validation = await validate(
-				req.body,
-				this.#constraint.createprofile()
-			);
-
-			if (validation) {
-				return res.status(422).json({
-					error: "validation error",
-					data: { validation },
-				});
-			}
-
-			this.#service.createprofile(req.body, req.userId, (resp) => {
-				res.status(resp.status).json(resp);
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			res.status(500).json({ error: "Internal server error" });
-		}
-	};
-
-	updateprofile = async (req, res) => {
-		try {
-			this.#service.updateprofile(req.body, req.userId, (resp) => {
-				res.status(resp.status).json(resp);
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			res.status(500).json({ error: "Internal server error" });
-		}
-	};
-
-	getprofile = async (req, res) => {
-		try {
-			this.#service.getprofile(req.userId, (resp) => {
-				res.status(resp.status).json(resp);
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			res.status(500).json({ error: "Internal server error" });
-		}
-	};
-
 	deactivateAccount = async (req, res) => {
 		try {
 			this.#service.deactivateAccount(req.userId, (resp) => {

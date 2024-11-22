@@ -51,7 +51,7 @@ class AuthService {
 			);
 
 			if (adminExists) {
-				return callback({ status: 400, error: "Email already in use" });
+				return callback({ status: 409, error: "Email already in use" });
 			}
 
 			const password = this.#generateRandomPassword();
@@ -128,7 +128,7 @@ class AuthService {
 
 			if (customerExists) {
 				return callback({
-					status: 400,
+					status: 409,
 					error: "Email already in use",
 				});
 			}

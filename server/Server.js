@@ -9,6 +9,7 @@ const RateLimiter = require("../middlewares/RateLimiter");
 const RouteProtector = require("../middlewares/RouteProtector");
 const MediaRoute = require("./routes/MediaRoute");
 const AuthRoute = require("./routes/AuthRoute");
+const ProfileRoute = require("./routes/ProfileRoute");
 
 let instance;
 
@@ -65,6 +66,8 @@ class Server {
 		this.#app.use("/api/v1/media", new MediaRoute().getRoutes());
 
 		this.#app.use("/api/v1/auth", new AuthRoute().getRoutes());
+
+		this.#app.use("/api/v1/profile", new ProfileRoute().getRoutes());
 	};
 
 	start = async () => {

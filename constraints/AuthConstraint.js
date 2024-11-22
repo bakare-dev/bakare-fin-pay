@@ -157,30 +157,7 @@ class AuthConstraint {
 		};
 	};
 
-	createprofile = () => {
-		return {
-			firstName: {
-				presence: {
-					allowEmpty: false,
-				},
-			},
-			lastName: {
-				presence: {
-					allowEmpty: false,
-				},
-			},
-			phoneNumber: {
-				presence: true,
-				length: {
-					minimum: 7,
-				},
-			},
-			pictureUrl: {
-				presence: true,
-				url: true,
-			},
-		};
-	};
+	
 
 	verify2fa = () => {
 		return {

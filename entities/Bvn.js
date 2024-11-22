@@ -1,13 +1,12 @@
 const { Model, DataTypes } = require("sequelize");
 const DatabaseEngine = require("../utils/DatabaseEngine");
 const User = require("./User");
-const Currency = require("./Currency");
 
 const dbEngine = new DatabaseEngine();
 
-class Notification extends Model {}
+class BVN extends Model {}
 
-Notification.init(
+BVN.init(
 	{
 		id: {
 			type: DataTypes.UUID,
@@ -15,30 +14,32 @@ Notification.init(
 			primaryKey: true,
 			allowNull: false,
 		},
-		message: {
+		bvn: {
 			type: DataTypes.STRING,
 			allowNull: false,
-		},
-		read: {
-			type: DataTypes.BOOLEAN,
-			defaultValue: false,
+			validate: {
+				isNumeric: true,
+				len: [11, 11],
+			},
 		},
 	},
 	{
 		sequelize: dbEngine.getConnectionManager(),
-		modelName: "notification",
+		modelName: "BVN",
 	}
 );
 
-User.hasMany(Notification, {
+User.hasOne(BVN, {
 	foreignKey: {
 		name: "userId",
 		allowNull: false,
 	},
+	as: "bvnDetails",
 });
 
-Notification.belongsTo(User, {
+BVN.belongsTo(User, {
 	foreignKey: "userId",
+	as: "user",
 });
 
-module.exports = Notification;
+module.exports = BVN;

@@ -61,6 +61,10 @@ module.exports = {
 			apiSecret: process.env.CLOUDINARY_API_SECRET,
 			cloudName: process.env.CLOUDINARY_CLOUD_NAME,
 		},
+		mono: {
+			pk: process.env.MONOPUBLICKEY,
+			sk: process.env.MONOSECRETKEY,
+		},
 	},
 	security: {
 		jwtSecret: process.env.JWT_SECRET,
@@ -74,7 +78,7 @@ module.exports = {
 			"/api/v1/auth/sign-in",
 			"/api/v1/auth/initiate-password-change",
 			"/api/v1/auth/complete-password-change",
-			"/api/v1/auth/verify-2fa"
+			"/api/v1/auth/verify-2fa",
 		],
 		saltLength: process.env.SALT_LENGTH,
 	},
