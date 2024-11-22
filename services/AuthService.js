@@ -321,6 +321,13 @@ class AuthService {
 				});
 			}
 
+			if (user.activated == 2) {
+				return callback({
+					status: 400,
+					error: "Account Deactivated",
+				});
+			}
+
 			if (user.activated != 1) {
 				return callback({
 					status: 400,
@@ -355,6 +362,7 @@ class AuthService {
 				data: {
 					token,
 					profile: Boolean(profileExists),
+					type: user.type,
 				},
 			});
 		} catch (err) {
@@ -491,32 +499,143 @@ class AuthService {
 		}
 	};
 
-	createprofile = async (payload, callback) => {
+	createprofile = async (payload, userId, callback) => {
 		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not found",
+				});
+			}
+
+			payload.userId = user.id;
+
+			const profile = await this.#userprofilerepository.create(payload);
+
+			if (!profile.id) {
+				return callback({
+					status: 400,
+					error: "Profile Creation Failed, Try again later",
+				});
+			}
+
+			callback({
+				status: 201,
+				message: "Profile Created Successfully",
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
 		}
 	};
 
-	updateprofile = async (payload, callback) => {
+	updateprofile = async (payload, userId, callback) => {
 		try {
+			const profile = await this.#userprofilerepository.findByUserId(
+				userId
+			);
+
+			if (!profile) {
+				return callback({
+					status: 404,
+					error: "User not found",
+				});
+			}
+
+			const updatedprofile = await this.#userprofilerepository.update(
+				profile.id,
+				payload
+			);
+
+			if (updatedprofile[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Profile Update Failed, Try again later",
+				});
+			}
+
+			callback({
+				status: 200,
+				message: "Profile Updated Successfully",
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
 		}
 	};
 
-	getprofile = async (payload, callback) => {
+	getprofile = async (userId, callback) => {
 		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not found",
+				});
+			}
+
+			const profile = await this.#userprofilerepository.findByUserId(
+				userId
+			);
+
+			callback({
+				status: 200,
+				data: {
+					firstName: profile.firstName,
+					lastName: profile.lastName,
+					phoneNumber: profile.phoneNumber,
+					emailAddress: user.emailAddress,
+					type: user.type,
+					pictureUrl: profile.pictureUrl,
+				},
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
 		}
 	};
 
-	deactivateAccount = async (payload, callback) => {
+	deactivateAccount = async (userId, callback) => {
 		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 400,
+					error: "Invalid/Expired Otp",
+				});
+			}
+
+			const updateduser = await this.#userrepository.update(user.id, {
+				activated: 2,
+			});
+
+			if (updateduser[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Account Deactivation Failed, Try Again later",
+				});
+			}
+
+			const userNotification = {
+				recipients: [`${user.emailAddress}`],
+				data: {},
+			};
+
+			this.#notificationService.sendAccountDeactivated(
+				userNotification,
+				(resp) => {}
+			);
+
+			this.#cacheService.del(`user-${user.emailAddress}`);
+
+			callback({
+				status: 200,
+				message: "Account Deactivated Successfully.",
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });

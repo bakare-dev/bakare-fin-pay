@@ -158,19 +158,40 @@ class AuthConstraint {
 	};
 
 	createprofile = () => {
-		return {};
-	};
-
-	updateprofile = () => {
-		return {};
-	};
-
-	getprofile = () => {
-		return {};
+		return {
+			firstName: {
+				presence: {
+					allowEmpty: false,
+				},
+			},
+			lastName: {
+				presence: {
+					allowEmpty: false,
+				},
+			},
+			phoneNumber: {
+				presence: true,
+				length: {
+					minimum: 7,
+				},
+			},
+			pictureUrl: {
+				presence: true,
+				url: true,
+			},
+		};
 	};
 
 	deactivateAccount = () => {
-		return {};
+		return {
+			otp: {
+				presence: true,
+				length: {
+					is: 6,
+					message: "^OTP must be exactly 6 digits",
+				},
+			},
+		};
 	};
 }
 

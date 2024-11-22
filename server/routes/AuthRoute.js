@@ -42,6 +42,17 @@ class AuthRoute {
 			"/complete-password-change",
 			this.#controller.completepasswordchanage
 		);
+
+		this.#router.get("/profile", this.#controller.getprofile);
+
+		this.#router.put("/profile", this.#controller.updateprofile);
+
+		this.#router.post("/profile", this.#controller.createprofile);
+
+		this.#router.post(
+			"/deactivate-account",
+			this.#controller.deactivateAccount
+		);
 	};
 
 	getRoutes = () => {

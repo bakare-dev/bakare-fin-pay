@@ -82,6 +82,21 @@ class NotificationService {
 			callback(response);
 		}
 	};
+
+	sendAccountDeactivated = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "deactivate-account.ejs",
+				subject: "Account Deactivation Successful",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			const response = await this.#mailer.sendMail(info);
+			callback(response);
+		}
+	};
 }
 
 module.exports = NotificationService;
