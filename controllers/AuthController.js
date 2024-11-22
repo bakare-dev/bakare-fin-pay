@@ -268,6 +268,55 @@ class AuthController {
 			res.status(500).json({ error: "Internal server error" });
 		}
 	};
+
+	enable2fa = async (req, res) => {
+		try {
+			this.#service.enable2Fa(req.userId, (resp) => {
+				res.status(resp.status).json(resp);
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			res.status(500).json({ error: "Internal server error" });
+		}
+	};
+
+	verify2fa = async (req, res) => {
+		try {
+			const validation = await validate(
+				req.body,
+				this.#constraint.verify2fa()
+			);
+
+			if (validation) {
+				return res.status(422).json({
+					error: "validation error",
+					data: { validation },
+				});
+			}
+
+			this.#service.verify2FA(
+				req.body.emailAddress,
+				req.body.key,
+				(resp) => {
+					res.status(resp.status).json(resp);
+				}
+			);
+		} catch (err) {
+			this.#logger.error(err);
+			res.status(500).json({ error: "Internal server error" });
+		}
+	};
+
+	disable2fa = async (req, res) => {
+		try {
+			this.#service.disable2FA(req.userId, (resp) => {
+				res.status(resp.status).json(resp);
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			res.status(500).json({ error: "Internal server error" });
+		}
+	};
 }
 
 module.exports = AuthController;

@@ -53,6 +53,12 @@ class AuthRoute {
 			"/deactivate-account",
 			this.#controller.deactivateAccount
 		);
+
+		this.#router.post("/enable-2fa", this.#controller.enable2fa);
+
+		this.#router.post("/disable-2fa", this.#controller.disable2fa);
+
+		this.#router.post("/verify-2fa", this.#controller.verify2fa);
 	};
 
 	getRoutes = () => {

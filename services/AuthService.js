@@ -4,8 +4,11 @@ const Logger = require("../utils/Logger");
 const UserProfileRepository = require("../repository/UserProfileRepository");
 const UserRepository = require("../repository/UserRepository");
 const NotificationService = require("./NotificationService");
-const crypto = require("crypto");
 const CacheService = require("./CacheService");
+const crypto = require("crypto");
+const OTPAuth = require("otpauth");
+const { encode } = require("hi-base32");
+const QRCode = require("qrcode");
 
 let instance;
 
@@ -306,12 +309,6 @@ class AuthService {
 				user = await this.#userrepository.findbyemail(
 					payload.emailAddress
 				);
-
-				this.#cacheService.set(
-					`user-${payload.emailAddress}`,
-					user,
-					1209000
-				);
 			}
 
 			if (!user) {
@@ -338,6 +335,16 @@ class AuthService {
 				});
 			}
 
+			if (user.enable2fa) {
+				return callback({
+					status: 400,
+					error: "2FA Enabled",
+					data: {
+						emailAddress: user.emailAddress,
+					},
+				});
+			}
+
 			const hashedpassword = crypto
 				.pbkdf2Sync(payload.password, user.salt, 10000, 64, "sha512")
 				.toString("hex");
@@ -354,6 +361,12 @@ class AuthService {
 			const token = await this.#authenticator.generateToken(
 				user.id,
 				user.type
+			);
+
+			this.#cacheService.set(
+				`user-${payload.emailAddress}`,
+				user,
+				1209000
 			);
 
 			callback({
@@ -604,8 +617,8 @@ class AuthService {
 
 			if (!user) {
 				return callback({
-					status: 400,
-					error: "Invalid/Expired Otp",
+					status: 404,
+					error: "User not Found",
 				});
 			}
 
@@ -640,6 +653,178 @@ class AuthService {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
 		}
+	};
+
+	enable2Fa = async (userId, callback) => {
+		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not Found",
+				});
+			}
+
+			if (user.enable2fa) {
+				return callback({
+					status: 400,
+					error: "2FA has been enabled for this account",
+				});
+			}
+
+			const base32_secret = this.#generateBase32Secret();
+			const secret = base32_secret;
+
+			let totp = new OTPAuth.TOTP({
+				issuer: this.#baseUrl,
+				label: "BakareFinPay",
+				algorithm: "SHA1",
+				digits: 6,
+				secret: base32_secret,
+			});
+
+			let otpauth_url = totp.toString();
+
+			QRCode.toDataURL(otpauth_url, async (err, qrUrl) => {
+				if (err) {
+					return callback({
+						status: 400,
+						error: "Error while enabling 2FA",
+					});
+				}
+				const updateduser = await this.#userrepository.update(user.id, {
+					secrets2fa: secret,
+					enable2fa: true,
+				});
+
+				if (updateduser[0] != 1) {
+					return callback({
+						status: 400,
+						error: "Error while enabling 2FA",
+					});
+				}
+
+				await this.#cacheService.del(`user-${user.emailAddress}`);
+
+				callback({
+					status: 200,
+					data: {
+						qrCodeUrl: qrUrl,
+						secret: base32_secret,
+					},
+				});
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			callback({ status: 500, error: "Internal server error" });
+		}
+	};
+
+	verify2FA = async (emailAddress, key, callback) => {
+		try {
+			const user = await this.#userrepository.findbyemail(emailAddress);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not Found",
+				});
+			}
+
+			if (!user.enable2fa) {
+				return callback({
+					status: 400,
+					error: "2FA not enabled for this account",
+				});
+			}
+
+			let totp = new OTPAuth.TOTP({
+				issuer: this.#baseUrl,
+				label: "BakareFinPay",
+				algorithm: "SHA1",
+				digits: 6,
+				secret: user.secrets2fa,
+			});
+
+			let delta = totp.validate({ token: key });
+
+			if (delta == null) {
+				return callback({
+					status: 400,
+					error: "Invalid/Expired Otp",
+				});
+			}
+
+			const profileExists =
+				await this.#userprofilerepository.findByUserId(user.id);
+
+			const token = await this.#authenticator.generateToken(
+				user.id,
+				user.type
+			);
+
+			callback({
+				status: 200,
+				message: "Sign In Successful",
+				data: {
+					token,
+					profile: Boolean(profileExists),
+					type: user.type,
+				},
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			callback({ status: 500, error: "Internal server error" });
+		}
+	};
+
+	disable2FA = async (userId, callback) => {
+		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not Found",
+				});
+			}
+
+			if (!user.enable2fa) {
+				return callback({
+					status: 400,
+					error: "2FA not enabled for this account",
+				});
+			}
+
+			const updateduser = await this.#userrepository.update(user.id, {
+				secrets2fa: null,
+				enable2fa: false,
+			});
+
+			if (updateduser[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Error while disabling 2FA",
+				});
+			}
+
+			await this.#cacheService.del(`user-${user.emailAddress}`);
+
+			callback({
+				status: 200,
+				message: "Disabled Successfully",
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			callback({ status: 500, error: "Internal server error" });
+		}
+	};
+
+	#generateBase32Secret = () => {
+		const buffer = crypto.randomBytes(15);
+		const base32 = encode(buffer).replace(/=/g, "").substring(0, 24);
+		return base32;
 	};
 
 	#generateSalt = () => {

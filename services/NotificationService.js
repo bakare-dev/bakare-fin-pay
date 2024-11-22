@@ -18,8 +18,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 
@@ -33,8 +34,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 
@@ -48,8 +50,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 
@@ -63,8 +66,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 
@@ -78,8 +82,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 
@@ -93,8 +98,9 @@ class NotificationService {
 				data: message.data,
 			};
 
-			const response = await this.#mailer.sendMail(info);
-			callback(response);
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
 		}
 	};
 }

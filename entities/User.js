@@ -36,6 +36,13 @@ User.init(
 			values: ["Customer", "Admin"],
 			allowNull: false,
 		},
+		enable2fa: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
+		},
+		secrets2fa: {
+			type: DataTypes.STRING,
+		},
 	},
 	{
 		sequelize: dbEngine.getConnectionManager(),

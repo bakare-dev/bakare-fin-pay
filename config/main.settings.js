@@ -74,6 +74,7 @@ module.exports = {
 			"/api/v1/auth/sign-in",
 			"/api/v1/auth/initiate-password-change",
 			"/api/v1/auth/complete-password-change",
+			"/api/v1/auth/verify-2fa"
 		],
 		saltLength: process.env.SALT_LENGTH,
 	},

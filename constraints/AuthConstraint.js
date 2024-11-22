@@ -182,6 +182,22 @@ class AuthConstraint {
 		};
 	};
 
+	verify2fa = () => {
+		return {
+			emailAddress: {
+				presence: true,
+				email: true,
+			},
+			key: {
+				presence: true,
+				length: {
+					is: 6,
+					message: "^OTP must be exactly 6 digits",
+				},
+			},
+		};
+	};
+
 	deactivateAccount = () => {
 		return {
 			otp: {
