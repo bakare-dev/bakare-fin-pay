@@ -12,6 +12,7 @@ class ProfileService {
 	#userprofilerepository;
 	#beneficiaryrepository;
 	#walletservice;
+	#monoService;
 
 	constructor() {
 		if (instance) return instance;
@@ -25,6 +26,7 @@ class ProfileService {
 		this.#beneficiaryrepository = new BeneficiaryRepository();
 
 		this.#walletservice = new WalletService();
+
 
 		instance = this;
 	}
@@ -42,6 +44,29 @@ class ProfileService {
 
 			payload.userId = user.id;
 
+			const phoneNoInUse =
+				await this.#userprofilerepository.findByPhoneNumber(
+					payload.phoneNumber
+				);
+
+			if (phoneNoInUse) {
+				return callback({
+					status: 409,
+					error: "Phone number already in use",
+				});
+			}
+
+			const userprofile = await this.#userprofilerepository.findByUserId(
+				user.id
+			);
+
+			if (userprofile) {
+				return callback({
+					status: 409,
+					error: "Profile already created",
+				});
+			}
+
 			const profile = await this.#userprofilerepository.create(payload);
 
 			if (!profile.id) {
@@ -51,7 +76,7 @@ class ProfileService {
 				});
 			}
 
-			this.#walletservice.createwallet(user.id, (resp) => {});
+			await this.#walletservice.createWallet(user.id, (resp) => {});
 
 			callback({
 				status: 201,
@@ -249,6 +274,7 @@ class ProfileService {
 			callback({ status: 500, error: "Internal server error" });
 		}
 	};
+
 }
 
 module.exports = ProfileService;

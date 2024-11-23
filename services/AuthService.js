@@ -56,16 +56,11 @@ class AuthService {
 
 			const password = this.#generateRandomPassword();
 
-			const salt = this.#generateSalt();
-
-			const hashedPassword = crypto
-				.pbkdf2Sync(password, salt, 10000, 64, "sha512")
-				.toString("hex");
+			const hashedPassword = await this.#hashKey(password);
 
 			const user = await this.#userrepository.create({
 				emailAddress: payload.emailAddress,
 				password: hashedPassword,
-				salt,
 				type: "Admin",
 				activated: 1,
 				profilesourceId: 1,
@@ -133,16 +128,11 @@ class AuthService {
 				});
 			}
 
-			const salt = this.#generateSalt();
-
-			const hashedPassword = crypto
-				.pbkdf2Sync(payload.password, salt, 10000, 64, "sha512")
-				.toString("hex");
+			const hashedPassword = await this.#hashKey(payload.password);
 
 			const user = await this.#userrepository.create({
 				emailAddress: payload.emailAddress,
 				password: hashedPassword,
-				salt,
 				type: "Customer",
 				profilesourceId: 1,
 			});
@@ -345,16 +335,18 @@ class AuthService {
 				});
 			}
 
-			const hashedpassword = crypto
-				.pbkdf2Sync(payload.password, user.salt, 10000, 64, "sha512")
-				.toString("hex");
+			const isPasswordValid = await this.#verifyKey(
+				payload.password,
+				user.password
+			);
 
-			if (hashedpassword != user.password) {
+			if (!isPasswordValid) {
 				return callback({
 					status: 400,
 					error: "Invalid Password",
 				});
 			}
+
 			const profileExists =
 				await this.#userprofilerepository.findByUserId(user.id);
 
@@ -505,105 +497,6 @@ class AuthService {
 			callback({
 				status: 200,
 				message: "Password Change Complete",
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			callback({ status: 500, error: "Internal server error" });
-		}
-	};
-
-	createprofile = async (payload, userId, callback) => {
-		try {
-			const user = await this.#userrepository.findById(userId);
-
-			if (!user) {
-				return callback({
-					status: 404,
-					error: "User not found",
-				});
-			}
-
-			payload.userId = user.id;
-
-			const profile = await this.#userprofilerepository.create(payload);
-
-			if (!profile.id) {
-				return callback({
-					status: 400,
-					error: "Profile Creation Failed, Try again later",
-				});
-			}
-
-			callback({
-				status: 201,
-				message: "Profile Created Successfully",
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			callback({ status: 500, error: "Internal server error" });
-		}
-	};
-
-	updateprofile = async (payload, userId, callback) => {
-		try {
-			const profile = await this.#userprofilerepository.findByUserId(
-				userId
-			);
-
-			if (!profile) {
-				return callback({
-					status: 404,
-					error: "User not found",
-				});
-			}
-
-			const updatedprofile = await this.#userprofilerepository.update(
-				profile.id,
-				payload
-			);
-
-			if (updatedprofile[0] != 1) {
-				return callback({
-					status: 400,
-					error: "Profile Update Failed, Try again later",
-				});
-			}
-
-			callback({
-				status: 200,
-				message: "Profile Updated Successfully",
-			});
-		} catch (err) {
-			this.#logger.error(err);
-			callback({ status: 500, error: "Internal server error" });
-		}
-	};
-
-	getprofile = async (userId, callback) => {
-		try {
-			const user = await this.#userrepository.findById(userId);
-
-			if (!user) {
-				return callback({
-					status: 404,
-					error: "User not found",
-				});
-			}
-
-			const profile = await this.#userprofilerepository.findByUserId(
-				userId
-			);
-
-			callback({
-				status: 200,
-				data: {
-					firstName: profile.firstName,
-					lastName: profile.lastName,
-					phoneNumber: profile.phoneNumber,
-					emailAddress: user.emailAddress,
-					type: user.type,
-					pictureUrl: profile.pictureUrl,
-				},
 			});
 		} catch (err) {
 			this.#logger.error(err);
@@ -821,6 +714,40 @@ class AuthService {
 		}
 	};
 
+	createTransactionPin = async (userId, pin, callback) => {
+		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({
+					status: 404,
+					error: "User not Found",
+				});
+			}
+
+			const hashedPin = await this.#hashKey(pin);
+
+			const updatedUser = await this.#userrepository.update(userId, {
+				transactionpin: hashedPin,
+			});
+
+			if (updatedUser[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Failed to set PIN",
+				});
+			}
+
+			return callback({
+				status: 200,
+				message: "PIN successfully created",
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			callback({ status: 500, error: "Internal server error" });
+		}
+	};
+
 	#generateBase32Secret = () => {
 		const buffer = crypto.randomBytes(15);
 		const base32 = encode(buffer).replace(/=/g, "").substring(0, 24);
@@ -829,6 +756,44 @@ class AuthService {
 
 	#generateSalt = () => {
 		return crypto.randomBytes(16).toString("hex");
+	};
+
+	#hashKey = (value) => {
+		return new Promise((resolve, reject) => {
+			const salt = this.#generateSalt();
+			crypto.pbkdf2(
+				value,
+				salt,
+				10000,
+				64,
+				"sha512",
+				(err, derivedKey) => {
+					if (err) {
+						return reject(new Error("Error hashing value"));
+					}
+					resolve(`${salt}:${derivedKey.toString("hex")}`);
+				}
+			);
+		});
+	};
+
+	#verifyKey = (value, hashedValue) => {
+		return new Promise((resolve, reject) => {
+			const [salt, originalHash] = hashedValue.split(":");
+			crypto.pbkdf2(
+				value,
+				salt,
+				10000,
+				64,
+				"sha512",
+				(err, derivedKey) => {
+					if (err) {
+						return reject(new Error("Error verifying hash"));
+					}
+					resolve(derivedKey.toString("hex") == originalHash);
+				}
+			);
+		});
 	};
 
 	#generateRandomPassword = (length = 8) => {

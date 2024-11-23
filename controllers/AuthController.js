@@ -262,6 +262,33 @@ class AuthController {
 		}
 	};
 
+	addPin = async (req, res) => {
+		try {
+			const validation = await validate(
+				req.body,
+				this.#constraint.addPin()
+			);
+
+			if (validation) {
+				return res.status(422).json({
+					error: "validation error",
+					data: { validation },
+				});
+			}
+
+			this.#service.createTransactionPin(
+				req.userId,
+				req.body.pin,
+				(resp) => {
+					res.status(resp.status).json(resp);
+				}
+			);
+		} catch (err) {
+			this.#logger.error(err);
+			res.status(500).json({ error: "Internal server error" });
+		}
+	};
+
 	disable2fa = async (req, res) => {
 		try {
 			this.#service.disable2FA(req.userId, (resp) => {

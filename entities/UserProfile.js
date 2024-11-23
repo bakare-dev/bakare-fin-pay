@@ -24,10 +24,15 @@ UserProfile.init(
 		},
 		phoneNumber: {
 			type: DataTypes.STRING,
+			unique: true,
 		},
 		pictureUrl: {
 			type: DataTypes.STRING,
 			allowNull: false,
+		},
+		bvnVerified: {
+			type: DataTypes.BOOLEAN,
+			defaultValue: false,
 		},
 	},
 	{

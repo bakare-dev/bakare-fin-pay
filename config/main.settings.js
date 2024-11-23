@@ -61,9 +61,12 @@ module.exports = {
 			apiSecret: process.env.CLOUDINARY_API_SECRET,
 			cloudName: process.env.CLOUDINARY_CLOUD_NAME,
 		},
-		mono: {
-			pk: process.env.MONOPUBLICKEY,
-			sk: process.env.MONOSECRETKEY,
+		paystack: {
+			pk: process.env.PAYSTACKSECRETKEY,
+			sk: process.env.PAYSTACKPUBLICKEY,
+		},
+		fixer: {
+			accessKey: process.env.FIXERACCESSKEY,
 		},
 	},
 	security: {
@@ -79,6 +82,8 @@ module.exports = {
 			"/api/v1/auth/initiate-password-change",
 			"/api/v1/auth/complete-password-change",
 			"/api/v1/auth/verify-2fa",
+			"/api/v1/wallet/currencies",
+			"/api/v1/wallet/exchange-rate",
 		],
 		saltLength: process.env.SALT_LENGTH,
 	},

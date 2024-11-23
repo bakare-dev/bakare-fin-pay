@@ -19,6 +19,10 @@ class CurrencyRepository extends Repository {
 			},
 		});
 	};
+
+	getCurrencies = async () => {
+		return await CurrencyEntity.findAll();
+	};
 }
 
 module.exports = CurrencyRepository;

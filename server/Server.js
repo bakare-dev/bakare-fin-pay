@@ -10,6 +10,8 @@ const RouteProtector = require("../middlewares/RouteProtector");
 const MediaRoute = require("./routes/MediaRoute");
 const AuthRoute = require("./routes/AuthRoute");
 const ProfileRoute = require("./routes/ProfileRoute");
+const BillRoute = require("./routes/BillRoute");
+const WalletRoute = require("./routes/WalletRoute");
 
 let instance;
 
@@ -68,6 +70,10 @@ class Server {
 		this.#app.use("/api/v1/auth", new AuthRoute().getRoutes());
 
 		this.#app.use("/api/v1/profile", new ProfileRoute().getRoutes());
+
+		this.#app.use("/api/v1/wallet", new WalletRoute().getRoutes());
+
+		this.#app.use("/api/v1/bill", new BillRoute().getRoutes());
 	};
 
 	start = async () => {

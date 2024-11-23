@@ -157,8 +157,6 @@ class AuthConstraint {
 		};
 	};
 
-	
-
 	verify2fa = () => {
 		return {
 			emailAddress: {
@@ -170,6 +168,18 @@ class AuthConstraint {
 				length: {
 					is: 6,
 					message: "^OTP must be exactly 6 digits",
+				},
+			},
+		};
+	};
+
+	addPin = () => {
+		return {
+			pin: {
+				presence: true,
+				length: {
+					is: 4,
+					message: "^PIN must be exactly 4 digits",
 				},
 			},
 		};

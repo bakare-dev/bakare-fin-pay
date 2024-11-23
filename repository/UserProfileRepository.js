@@ -19,6 +19,14 @@ class UserProfileRepository extends Repository {
 			},
 		});
 	};
+
+	findByPhoneNumber = async (phoneNumber) => {
+		return await UserProfileEntity.findOne({
+			where: {
+				phoneNumber,
+			},
+		});
+	};
 }
 
 module.exports = UserProfileRepository;

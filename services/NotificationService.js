@@ -103,6 +103,38 @@ class NotificationService {
 			});
 		}
 	};
+
+	sendWalletTransfer = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "wallet-transfer.ejs",
+				subject: "Wallet Transfer Successful",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
+
+	sendAWalletRecever = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "funds-received.ejs",
+				subject: "Funds Received",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
 }
 
 module.exports = NotificationService;

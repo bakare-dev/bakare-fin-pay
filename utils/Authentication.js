@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
-const { security } = require("../config/main.settings");
+const { security, infrastructure } = require("../config/main.settings");
 const CacheService = require("../services/CacheService");
+const dayjs = require("dayjs");
 
 let instance;
 
@@ -20,10 +21,18 @@ class Authenticate {
 	generateToken = async (userId, type) => {
 		const now = new Date();
 
-		const accessTokenExpiresIn = new Date(now.getTime() + 3600 * 1000);
+		let tokenExpire = new Date().getTime() + 6 * 60 * 60000;
+
 		const accessToken = jwt.sign({ userId, type }, this.#key, {
-			expiresIn: "1h",
+			expiresIn: "6h",
 		});
+
+		const token = {
+			accessToken,
+			expiresIn: dayjs(new Date(tokenExpire)).format(
+				infrastructure.dateFormat
+			),
+		};
 
 		await this.#cacheService.set(
 			`access-token-${userId}`,
@@ -32,10 +41,7 @@ class Authenticate {
 		);
 
 		return {
-			accessToken: {
-				token: accessToken,
-				expiresIn: accessTokenExpiresIn.toISOString(),
-			},
+			token,
 		};
 	};
 

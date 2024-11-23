@@ -23,10 +23,6 @@ User.init(
 			type: DataTypes.STRING,
 			allowNull: false,
 		},
-		salt: {
-			type: DataTypes.STRING,
-			allowNull: false,
-		},
 		activated: {
 			type: DataTypes.INTEGER,
 			defaultValue: 0, // 0-awaiting activation, 1-activated, 2-deactivated
@@ -41,6 +37,9 @@ User.init(
 			defaultValue: false,
 		},
 		secrets2fa: {
+			type: DataTypes.STRING,
+		},
+		transactionpin: {
 			type: DataTypes.STRING,
 		},
 	},

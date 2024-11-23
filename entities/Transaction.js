@@ -1,5 +1,7 @@
 const { Model, DataTypes } = require("sequelize");
 const DatabaseEngine = require("../utils/DatabaseEngine");
+const Currency = require("./Currency");
+const User = require("./User");
 
 const dbEngine = new DatabaseEngine();
 
@@ -14,7 +16,7 @@ Transaction.init(
 			allowNull: false,
 		},
 		amount: {
-			type: DataTypes.DECIMAL(10, 2),
+			type: DataTypes.DECIMAL(10, 6),
 			allowNull: false,
 			validate: {
 				min: 0,
@@ -32,8 +34,12 @@ Transaction.init(
 			type: DataTypes.ENUM("Debit", "Credit"),
 			allowNull: false,
 		},
+		mode: {
+			type: DataTypes.ENUM("Card", "Wallet"),
+			allowNull: false,
+		},
 		status: {
-			type: DataTypes.ENUM("Processing", "Success", "Failed"),
+			type: DataTypes.ENUM("Processing", "Successful", "Failed"),
 			defaultValue: "Processing",
 			allowNull: false,
 		},
@@ -43,5 +49,27 @@ Transaction.init(
 		modelName: "transaction",
 	}
 );
+
+Currency.hasMany(Transaction, {
+	foreignKey: {
+		name: "currencyId",
+		allowNull: false,
+	},
+});
+
+Transaction.belongsTo(Currency, {
+	foreignKey: "currencyId",
+});
+
+User.hasMany(Transaction, {
+	foreignKey: {
+		name: "userId",
+		allowNull: false,
+	},
+});
+
+Transaction.belongsTo(User, {
+	foreignKey: "userId",
+});
 
 module.exports = Transaction;

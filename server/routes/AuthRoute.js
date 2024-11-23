@@ -53,6 +53,8 @@ class AuthRoute {
 		this.#router.post("/disable-2fa", this.#controller.disable2fa);
 
 		this.#router.post("/verify-2fa", this.#controller.verify2fa);
+
+		this.#router.post("/pin", this.#controller.addPin);
 	};
 
 	getRoutes = () => {
