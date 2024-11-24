@@ -85,6 +85,5 @@ module.exports = {
 			"/api/v1/wallet/currencies",
 			"/api/v1/wallet/exchange-rate",
 		],
-		saltLength: process.env.SALT_LENGTH,
 	},
 };
