@@ -78,10 +78,6 @@ class PaystackService {
 					return;
 				}
 
-				await this.#transactionrepository.update(transaction.id, {
-					status: 1,
-				});
-
 				callback({
 					status: 200,
 					message: "Transfer Successful",
@@ -98,10 +94,6 @@ class PaystackService {
 					});
 					return;
 				}
-
-				await this.#transactionrepository.update(transaction.id, {
-					status: 1,
-				});
 
 				callback({
 					status: 200,

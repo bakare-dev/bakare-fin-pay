@@ -135,6 +135,22 @@ class NotificationService {
 			});
 		}
 	};
+
+	sendAWalletTopup = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "wallet-topup.ejs",
+				subject: "Wallet Top Up Successfully",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
 }
 
 module.exports = NotificationService;

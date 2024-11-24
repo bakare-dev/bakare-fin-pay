@@ -38,6 +38,11 @@ class WalletRoute {
 		this.#router.get("/exchange-rate", this.#controller.getExchangeRate);
 
 		this.#router.post("/exchange", this.#controller.convertFunds);
+
+		this.#router.put(
+			"/cancel-transaction",
+			this.#controller.cancleTransaction
+		);
 	};
 
 	getRoutes = () => {

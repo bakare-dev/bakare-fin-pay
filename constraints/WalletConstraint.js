@@ -60,8 +60,17 @@ class WalletConstraint {
 		return {};
 	};
 
-	completeTopup = () => {
-		return {};
+	cancleTransaction = () => {
+		return {
+			id: {
+				presence: true,
+				format: {
+					pattern:
+						/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+					message: "is not a valid UUID",
+				},
+			},
+		};
 	};
 
 	convertFunds = () => {

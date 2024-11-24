@@ -706,7 +706,7 @@ class WalletService {
 		}
 	};
 
-	initiateTopup = async (userId, amount, callback) => {
+	initiateTopup = async (userId, payload, callback) => {
 		try {
 		} catch (err) {
 			this.#logger.error(err);
@@ -716,6 +716,102 @@ class WalletService {
 
 	completeTopup = async (transactionId, callback) => {
 		try {
+			const transaction = await this.#transactionrepository.findById(
+				transactionId
+			);
+
+			if (!transaction) {
+				return callback({
+					status: 404,
+					error: "Transaction not found",
+				});
+			}
+			const updatedtransaction = await this.#transactionrepository.update(
+				transaction.id,
+				{
+					status: "Successful",
+				}
+			);
+
+			if (updatedtransaction[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Transaction updated failed",
+				});
+			}
+
+			const currency = await this.#currencyrepository.findById(
+				transaction.currencyId
+			);
+
+			const user = await this.#userrepository.findById(
+				transaction.userId
+			);
+
+			const profile = await this.#userprofilerepository.findByUserId(
+				transaction.user.id
+			);
+
+			this.#notificationService.sendAWalletTopup(
+				{
+					recipient: [user.emailAddress],
+					data: {
+						name: profile.firstName,
+						amount: transaction.amount,
+						currency: currency.symbol,
+					},
+				},
+				(resp) => {}
+			);
+
+			callback({
+				status: 200,
+				message: "Wallet Top up successful",
+			});
+		} catch (err) {
+			this.#logger.error(err);
+			callback({ status: 500, error: "Internal server error" });
+		}
+	};
+
+	cancleTransaction = async (userId, transactionId, callback) => {
+		try {
+			const transaction = await this.#transactionrepository.findById(
+				transactionId
+			);
+
+			if (!transaction) {
+				return callback({
+					status: 404,
+					error: "Transaction not found",
+				});
+			}
+
+			if (transaction.userId != userId) {
+				return callback({
+					status: 403,
+					error: "Forbidden",
+				});
+			}
+
+			const updatedtransaction = await this.#transactionrepository.update(
+				transaction.id,
+				{
+					status: "Failed",
+				}
+			);
+
+			if (updatedtransaction[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Transaction updated failed",
+				});
+			}
+
+			callback({
+				status: 200,
+				message: "Transaction Cancelled",
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });

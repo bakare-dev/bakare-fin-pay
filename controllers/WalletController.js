@@ -157,8 +157,27 @@ class WalletController {
 		}
 	};
 
-	completeTopup = async (req, res) => {
+	cancleTransaction = async (req, res) => {
 		try {
+			const validation = await validate(
+				req.query,
+				this.#constraint.cancleTransaction()
+			);
+
+			if (validation) {
+				return res.status(422).json({
+					error: "validation error",
+					data: { validation },
+				});
+			}
+
+			this.#service.cancleTransaction(
+				req.userId,
+				req.query.id,
+				(resp) => {
+					res.status(resp.status).json(resp);
+				}
+			);
 		} catch (err) {
 			this.#logger.error(err);
 			res.status(500).json({ error: "Internal server error" });
@@ -236,14 +255,6 @@ class WalletController {
 					res.status(resp.status).json(resp);
 				}
 			);
-		} catch (err) {
-			this.#logger.error(err);
-			res.status(500).json({ error: "Internal server error" });
-		}
-	};
-
-	generatePaymentLink = async (req, res) => {
-		try {
 		} catch (err) {
 			this.#logger.error(err);
 			res.status(500).json({ error: "Internal server error" });
