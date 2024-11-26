@@ -157,7 +157,39 @@ class NotificationService {
 			const info = {
 				sender: "noreply@bakaredev.me",
 				templateFile: "wallet-topup-initiated.ejs",
-				subject: "Wallet Top Up Successfully",
+				subject: "Wallet Top Up Initiated",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
+
+	sendWalletWithdrawerCompleted = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "wallet-topup-completed.ejs",
+				subject: "Funds withdrawer Successfully",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
+
+	sendWalletWithdrawerInitiated = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "wallet-topup-initiated.ejs",
+				subject: "Funds Withdrawer",
 				recipients: [recipient],
 				data: message.data,
 			};

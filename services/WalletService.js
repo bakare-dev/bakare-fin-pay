@@ -3,6 +3,7 @@ const UserRepository = require("../repository/UserRepository");
 const UserProfileRepository = require("../repository/UserProfileRepository");
 const WalletRepository = require("../repository/WalletRepository");
 const WalletTransactionRepository = require("../repository/WalletTransactionRepository");
+const BeneficiaryRepository = require("../repository/BeneficiaryRepository");
 const TransactionRepository = require("../repository/TransactionRepository");
 const CurrencyRepository = require("../repository/CurrencyRepository");
 const PaystackService = require("../utils/PaystackService");
@@ -25,6 +26,7 @@ class WalletService {
 	#paystackservice;
 	#notificationService;
 	#baseUrl;
+	#beneficiaryService;
 
 	constructor() {
 		if (instance) return instance;
@@ -46,6 +48,8 @@ class WalletService {
 		this.#paystackservice = new PaystackService();
 
 		this.#notificationService = new NotificationService();
+
+		this.#beneficiaryService = new BeneficiaryRepository();
 
 		this.#baseUrl =
 			server.mode == "development"
@@ -941,6 +945,94 @@ class WalletService {
 
 	initiateWithdrawer = async (userId, payload, callback) => {
 		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({ status: 404, error: "User not found" });
+			}
+
+			const currency =
+				await this.#currencyrepository.getCurrencybyCountry("NGN");
+
+			const isPinValid = await this.#verifyKey(
+				payload.pin,
+				user.transactionpin
+			);
+
+			if (!isPinValid) {
+				return callback({ status: 403, error: "Invalid PIN" });
+			}
+
+			const wallet = await this.#walletrepository.getWalletByCurrencyId(
+				currency.id,
+				user.id
+			);
+
+			if (!wallet) {
+				return callback({
+					status: 404,
+					error: `${currency.symbol} Wallet not found`,
+				});
+			}
+
+			const transactions =
+				await this.#wallettransactionrepository.getWalletTransactionsByWalletId(
+					wallet.id
+				);
+
+			const balance = transactions.reduce((acc, transaction) => {
+				if (transaction.transaction.status == "Successful") {
+					const amount = parseFloat(
+						transaction.transaction.amount
+					).toFixed(6);
+					return transaction.transaction.type == "Credit"
+						? acc + amount
+						: acc - amount;
+				}
+				return acc;
+			}, 0);
+
+			if (balance < payload.amount) {
+				return callback({
+					status: 400,
+					error: "Insufficient funds in your NGN wallet",
+				});
+			}
+
+			const transaction = await this.#transactionrepository.create({
+				amount: payload.amount,
+				currencyId: currency.id,
+				description: payload.description || "funds withdrawer",
+				userId: user.id,
+				type: "Debit",
+				mode: "Wallet",
+				ref: this.#generateRef(),
+			});
+
+			if (!transaction.id) {
+				return callback({
+					status: 400,
+					error: "An errored occurred during withdrawer",
+				});
+			}
+
+			await this.#wallettransactionrepository.create({
+				walletId: wallet.id,
+				transactionId: transaction.id,
+			});
+
+			const paystackpayload = {
+				source: "balance",
+				accountNumber: payload.accountNumber,
+				bankName: payload.bankName,
+				ref: transaction.ref,
+				amount: transaction.amount,
+				reason: payload.description || "funds withdrawer",
+				emailAddress: user.emailAddress,
+				accountName: payload.accountName,
+			};
+
+			this.#paystackservice.makeTranfer(paystackpayload, (resp) => {});
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
@@ -949,6 +1041,41 @@ class WalletService {
 
 	completeWithdrawer = async (transactionId, callback) => {
 		try {
+			const transaction = await this.#transactionrepository.findById(
+				transactionId
+			);
+
+			if (!transaction) {
+				return callback({
+					status: 404,
+					error: "Transaction not found",
+				});
+			}
+			const updatedtransaction = await this.#transactionrepository.update(
+				transaction.id,
+				{
+					status: "Successful",
+				}
+			);
+
+			if (updatedtransaction[0] != 1) {
+				return callback({
+					status: 400,
+					error: "Transaction updated failed",
+				});
+			}
+
+			const currency = await this.#currencyrepository.findById(
+				transaction.currencyId
+			);
+
+			const user = await this.#userrepository.findById(
+				transaction.userId
+			);
+
+			const profile = await this.#userprofilerepository.findByUserId(
+				transaction.user.id
+			);
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
