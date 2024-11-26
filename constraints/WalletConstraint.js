@@ -57,7 +57,30 @@ class WalletConstraint {
 	};
 
 	initiateTopup = () => {
-		return {};
+		return {
+			pin: {
+				presence: true,
+				length: {
+					is: 4,
+					message: "^PIN must be exactly 4 digits",
+				},
+			},
+			currencyId: {
+				presence: true,
+				format: {
+					pattern:
+						/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+					message: "is not a valid UUID",
+				},
+			},
+			amount: {
+				presence: true,
+				numericality: {
+					greaterThan: 0,
+					onlyInteger: false,
+				},
+			},
+		};
 	};
 
 	cancleTransaction = () => {

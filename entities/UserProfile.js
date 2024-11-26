@@ -46,6 +46,7 @@ User.hasOne(UserProfile, {
 		name: "userId",
 		allowNull: false,
 	},
+	onDelete: "CASCADE",
 });
 
 UserProfile.belongsTo(User, {

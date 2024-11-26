@@ -7,7 +7,7 @@ const TransactionRepository = require("../repository/TransactionRepository");
 const CurrencyRepository = require("../repository/CurrencyRepository");
 const PaystackService = require("../utils/PaystackService");
 const NotificationService = require("./NotificationService");
-const { infrastructure } = require("../config/main.settings");
+const { infrastructure, server } = require("../config/main.settings");
 const crypto = require("crypto");
 const dayjs = require("dayjs");
 const axios = require("axios");
@@ -24,6 +24,7 @@ class WalletService {
 	#currencyrepository;
 	#paystackservice;
 	#notificationService;
+	#baseUrl;
 
 	constructor() {
 		if (instance) return instance;
@@ -45,6 +46,11 @@ class WalletService {
 		this.#paystackservice = new PaystackService();
 
 		this.#notificationService = new NotificationService();
+
+		this.#baseUrl =
+			server.mode == "development"
+				? infrastructure.baseUrl.development
+				: infrastructure.baseUrl.production;
 
 		instance = this;
 	}
@@ -468,7 +474,7 @@ class WalletService {
 						amount: payload.amount,
 						currency: currency.symbol,
 						sender: senderProfile.firstName,
-						recipient: recipientProfile.firstName,
+						recipients: recipientProfile.firstName,
 						transactionDate: dayjs(
 							new Date(debitTransaction.createdAt)
 						).format(infrastructure.dateFormat),
@@ -478,14 +484,14 @@ class WalletService {
 				(resp) => {}
 			);
 
-			this.#notificationService.sendAWalletRecever(
+			this.#notificationService.sendWalletReceiver(
 				{
 					recipients: [recipientUser.emailAddress],
 					data: {
 						amount: payload.amount,
 						sender: senderProfile.firstName,
 						currency: currency.symbol,
-						recipient: recipientProfile.firstName,
+						recipients: recipientProfile.firstName,
 						transactionDate: dayjs(
 							new Date(creditTransaction.createdAt)
 						).format(infrastructure.dateFormat),
@@ -708,6 +714,117 @@ class WalletService {
 
 	initiateTopup = async (userId, payload, callback) => {
 		try {
+			const user = await this.#userrepository.findById(userId);
+
+			if (!user) {
+				return callback({ status: 404, error: "User not found" });
+			}
+
+			const currency = await this.#currencyrepository.findById(
+				payload.currencyId
+			);
+
+			const isPinValid = await this.#verifyKey(
+				payload.pin,
+				user.transactionpin
+			);
+
+			if (!isPinValid) {
+				return callback({ status: 403, error: "Invalid PIN" });
+			}
+
+			const wallet = await this.#walletrepository.getWalletByCurrencyId(
+				currency.id,
+				user.id
+			);
+
+			if (!wallet) {
+				return callback({
+					status: 404,
+					error: `${currency.symbol} Wallet not found`,
+				});
+			}
+
+			const transaction = await this.#transactionrepository.create({
+				amount: payload.amount,
+				ref: this.#generateRef(),
+				description: `wallet top up`,
+				type: "Credit",
+				mode: "Wallet",
+				currencyId: currency.id,
+				userId: user.id,
+			});
+
+			if (!transaction.id) {
+				return callback({
+					status: 400,
+					error: "An error occurred during transaction creation",
+				});
+			}
+
+			await this.#wallettransactionrepository.create({
+				walletId: wallet.id,
+				transactionId: transaction.id,
+			});
+
+			const paystackPayload = {
+				amount: transaction.amount * 100,
+				email: user.emailAddress,
+				reference: transaction.ref,
+				currency: currency.country,
+				callback_url: this.#baseUrl + "/wallet",
+				metadata: {
+					cancel_action: this.#baseUrl + "/wallet",
+					callback_url: this.#baseUrl + "/wallet",
+				},
+			};
+
+			this.#paystackservice.initializePayment(
+				paystackPayload,
+				async (resp) => {
+					if (resp.status != "success") {
+						this.#transactionrepository.update(transaction.id, {
+							status: "Failed",
+						});
+						return callback({
+							status: 400,
+							error: "An error occurred during payment initialization",
+						});
+					} else {
+						const profile =
+							await this.#userprofilerepository.findByUserId(
+								user.id
+							);
+
+						this.#notificationService.sendWalletTopupInitiated(
+							{
+								recipients: [user.emailAddress],
+								data: {
+									name: profile.firstName,
+									amount: transaction.amount,
+									transactionDate: dayjs(
+										new Date(transaction.createdAt)
+									).format(infrastructure.dateFormat),
+									transactionId: transaction.id,
+									currency: currency.symbol,
+								},
+							},
+							(resp) => {}
+						);
+						return callback({
+							status: 200,
+							message: `Payment Initiated`,
+							data: {
+								amount: parseFloat(transaction.amount).toFixed(
+									4
+								),
+								transactionReference: transaction.ref,
+								paymentUrl: resp.data.paymentUrl,
+							},
+						});
+					}
+				}
+			);
 		} catch (err) {
 			this.#logger.error(err);
 			callback({ status: 500, error: "Internal server error" });
@@ -752,12 +869,16 @@ class WalletService {
 				transaction.user.id
 			);
 
-			this.#notificationService.sendAWalletTopup(
+			this.#notificationService.sendWalletTopupCompleted(
 				{
-					recipient: [user.emailAddress],
+					recipients: [user.emailAddress],
 					data: {
 						name: profile.firstName,
 						amount: transaction.amount,
+						transactionDate: dayjs(
+							new Date(transaction.createdAt)
+						).format(infrastructure.dateFormat),
+						transactionId: transaction.id,
 						currency: currency.symbol,
 					},
 				},

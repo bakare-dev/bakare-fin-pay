@@ -43,6 +43,8 @@ class WalletRoute {
 			"/cancel-transaction",
 			this.#controller.cancleTransaction
 		);
+
+		this.#router.post("/top-up", this.#controller.initiateTopup);
 	};
 
 	getRoutes = () => {

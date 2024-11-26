@@ -120,11 +120,7 @@ class WalletController {
 
 	paystackWebhook = async (req, res) => {
 		try {
-			const allowedIPs = [
-				"52.31.139.75",
-				"52.49.173.169",
-				"52.214.14.220",
-			];
+			const allowedIPs = infrastructure.paystack.ips;
 			const hash = crypto
 				.createHmac("sha512", infrastructure.paystack.sk)
 				.update(JSON.stringify(req.body))
@@ -151,6 +147,21 @@ class WalletController {
 
 	initiateTopup = async (req, res) => {
 		try {
+			const validation = await validate(
+				req.body,
+				this.#constraint.initiateTopup()
+			);
+
+			if (validation) {
+				return res.status(422).json({
+					error: "validation error",
+					data: { validation },
+				});
+			}
+
+			this.#service.initiateTopup(req.userId, req.body, (resp) => {
+				res.status(resp.status).json(resp);
+			});
 		} catch (err) {
 			this.#logger.error(err);
 			res.status(500).json({ error: "Internal server error" });

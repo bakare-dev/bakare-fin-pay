@@ -43,7 +43,7 @@ class PaystackService {
 				data: { paymentUrl: response.data.data.authorization_url },
 			});
 		} catch (err) {
-			this.#logger.error(err);
+			this.#logger.error(err.message);
 			callback({ status: 500, error: "Internal Server Error" });
 			return;
 		}

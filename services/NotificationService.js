@@ -120,7 +120,7 @@ class NotificationService {
 		}
 	};
 
-	sendAWalletRecever = async (message, callback) => {
+	sendWalletReceiver = async (message, callback) => {
 		for (const recipient of message.recipients) {
 			const info = {
 				sender: "noreply@bakaredev.me",
@@ -136,11 +136,27 @@ class NotificationService {
 		}
 	};
 
-	sendAWalletTopup = async (message, callback) => {
+	sendWalletTopupCompleted = async (message, callback) => {
 		for (const recipient of message.recipients) {
 			const info = {
 				sender: "noreply@bakaredev.me",
-				templateFile: "wallet-topup.ejs",
+				templateFile: "wallet-topup-completed.ejs",
+				subject: "Wallet Top Up Successfully",
+				recipients: [recipient],
+				data: message.data,
+			};
+
+			this.#mailer.sendMail(info, (resp) => {
+				callback(resp);
+			});
+		}
+	};
+
+	sendWalletTopupInitiated = async (message, callback) => {
+		for (const recipient of message.recipients) {
+			const info = {
+				sender: "noreply@bakaredev.me",
+				templateFile: "wallet-topup-initiated.ejs",
 				subject: "Wallet Top Up Successfully",
 				recipients: [recipient],
 				data: message.data,

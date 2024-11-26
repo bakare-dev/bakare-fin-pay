@@ -62,8 +62,9 @@ module.exports = {
 			cloudName: process.env.CLOUDINARY_CLOUD_NAME,
 		},
 		paystack: {
-			pk: process.env.PAYSTACKSECRETKEY,
-			sk: process.env.PAYSTACKPUBLICKEY,
+			pk: process.env.PAYSTACKPUBLICKEY,
+			sk: process.env.PAYSTACKSECRETKEY,
+			ips: process.env.PAYSTACKIPS
 		},
 		fixer: {
 			accessKey: process.env.FIXERACCESSKEY,
